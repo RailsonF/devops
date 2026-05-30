@@ -109,5 +109,5 @@ clientesApp.delete('/:id', async (c) => {
   }
 }
 )
-
+// Comentário para forçar o deploy na Cloudflare
 export default clientesApp
