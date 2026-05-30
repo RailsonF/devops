@@ -37,7 +37,7 @@ jobs:
       - name: Deploy para o Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets::CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets::CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           # Como estamos em um monorepo, avisamos à action em qual pasta rodar:
           workingDirectory: 'backend'
