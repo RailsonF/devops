@@ -82,7 +82,7 @@ clientesApp.put('/:id', async (c) => {
     }, 500 as const)
   }
 })
-
+// Comentário para forçar o deploy na Cloudflare
 // 4. Remover Cliente (DELETE /:id)
 clientesApp.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'))
