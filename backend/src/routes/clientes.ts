@@ -15,7 +15,7 @@ clientesApp.post('/', async (c) => {
   const { nome, email, senha } = await c.req.json()
 
   if (!nome || !email || !senha) {
-    return c.json({ erro: 'Nome, e-mail e senha são obrigatórios' }, 400)
+    return c.json({ success: false, error: 'Nome, e-mail e senha são obrigatórios' }, 400)
   }
 
   try {
@@ -25,24 +25,29 @@ clientesApp.post('/', async (c) => {
     ).bind(nome, email, hash).run()
 
     if (success) {
-      return c.json({ mensagem: 'Cliente cadastrado com sucesso!' }, 201)
+      return c.json({ success: true, message: 'Cliente cadastrado com sucesso!' }, 201)
     }
-    return c.json({ erro: 'Erro ao cadastrar cliente' }, 500)
+    return c.json({ success: false, error: 'Erro ao cadastrar cliente' }, 500)
   } catch (error: any) {
+    // Se o e-mail já existir no banco
     if (error.message?.includes('UNIQUE') || error.message?.includes('constraint')) {
-      return c.json({ erro: 'E-mail já cadastrado' }, 400)
+      return c.json({ success: false, error: 'E-mail já cadastrado' }, 400)
     }
-    return c.json({ erro: 'Erro interno', motivo: error.message }, 500)
+    return c.json({ success: false, error: 'Erro interno do servidor' }, 500)
   }
 })
 
 // 2. Listar Clientes (GET /)
 clientesApp.get('/', async (c) => {
-  const { results } = await c.env.DB.prepare(
-    `SELECT * FROM clientes ORDER BY criado_em DESC`
-  ).all()
+  try {
+    const { results } = await c.env.DB.prepare(
+      `SELECT * FROM clientes ORDER BY criado_em DESC`
+    ).all()
 
-  return c.json(results)
+    return c.json({ success: true, data: results })
+  } catch {
+    return c.json({ success: false, error: 'Erro ao buscar clientes' }, 500)
+  }
 })
 
 // 3. Editar Cliente (PUT /:id)
@@ -51,14 +56,14 @@ clientesApp.put('/:id', async (c) => {
   const id = Number(c.req.param('id'))
 
   if (isNaN(id)) {
-    return c.json({ erro: 'ID inválido. Deve ser um número inteiro.' }, 400 as const)
+    return c.json({ success: false, error: 'ID inválido' }, 400)
   }
 
   // 2. Tratativa dos dados de entrada
   const { nome, email, senha } = await c.req.json()
 
   if (!nome || !email) {
-    return c.json({ erro: 'Nome e e-mail são obrigatórios' }, 400 as const)
+    return c.json({ success: false, error: 'Nome e e-mail são obrigatórios' }, 400)
   }
 
   // 3. Tratativa do Banco de Dados com Try/Catch
@@ -66,6 +71,7 @@ clientesApp.put('/:id', async (c) => {
     let query = `UPDATE clientes SET nome = ?, email = ?`
     const params: any[] = [nome, email]
 
+    // Se uma nova senha foi enviada, faz o hash e atualiza também
     if (senha) {
       const hash = await bcrypt.hash(senha, 10)
       query += `, senha = ?`
@@ -78,23 +84,16 @@ clientesApp.put('/:id', async (c) => {
     const { success } = await c.env.DB.prepare(query).bind(...params).run()
 
     if (success) {
-      return c.json({ mensagem: 'Cliente atualizado com sucesso!' }) // Status 200 é o padrão
+      return c.json({ success: true, message: 'Cliente atualizado com sucesso!' })
     }
 
-    return c.json({ erro: 'Cliente não encontrado' }, 404 as const)
-
+    return c.json({ success: false, error: 'Cliente não encontrado' }, 404)
   } catch (error: any) {
-    console.error("Erro ao atualizar cliente:", error.message)
-
     // Se o usuário tentar mudar o e-mail para um que já pertence a OUTRO cliente
-    if (error.message.includes('UNIQUE') || error.message.includes('constraint')) {
-      return c.json({ erro: 'Este e-mail já está sendo usado por outro cliente' }, 400 as const)
+    if (error.message?.includes('UNIQUE') || error.message?.includes('constraint')) {
+      return c.json({ success: false, error: 'Este e-mail já está em uso' }, 400)
     }
-
-    return c.json({
-      erro: 'Erro interno ao atualizar cliente',
-      motivo_real: error.message
-    }, 500 as const)
+    return c.json({ success: false, error: 'Erro interno do servidor' }, 500)
   }
 })
 
@@ -103,7 +102,7 @@ clientesApp.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'))
 
   if (isNaN(id)) {
-    return c.json({ erro: 'ID inválido. Deve ser um número inteiro.' }, 400 as const)
+    return c.json({ success: false, error: 'ID inválido' }, 400)
   }
 
   try {
@@ -112,17 +111,14 @@ clientesApp.delete('/:id', async (c) => {
     ).bind(id).run()
 
     if (success) {
-      return c.json({ mensagem: 'Cliente removido com sucesso!' })
+      return c.json({ success: true, message: 'Cliente removido com sucesso!' })
     }
 
-    return c.json({ erro: 'Cliente não encontrado' }, 404 as const)
-
-  } catch (error: any) {
-    console.error("Erro ao deletar cliente:", error.message)
-
-    return c.json({ erro: 'Erro interno ao deletar cliente', motivo: error.message }, 500 as const)
+    return c.json({ success: false, error: 'Cliente não encontrado' }, 404)
+  } catch {
+    return c.json({ success: false, error: 'Erro interno do servidor' }, 500)
   }
-}
-)
+})
+
 // Comentário para forçar o deploy na Cloudflare
 export default clientesApp

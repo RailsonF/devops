@@ -13,7 +13,7 @@ loginApp.post('/', async (c) => {
     const { email, senha } = await c.req.json()
 
     if (!email || !senha) {
-      return c.json({ erro: 'E-mail e senha são obrigatórios' }, 400)
+      return c.json({ success: false, error: 'E-mail e senha são obrigatórios' }, 400)
     }
 
     const { results } = await c.env.DB.prepare(
@@ -21,19 +21,19 @@ loginApp.post('/', async (c) => {
     ).bind(email).all() as { results: { ID_CLIENTE: number; SENHA: string }[] }
 
     if (results.length === 0) {
-      return c.json({ erro: 'E-mail ou senha inválidos' }, 401)
+      return c.json({ success: false, error: 'E-mail ou senha inválidos' }, 401)
     }
 
     const usuario = results[0]
     const senhaValida = await bcrypt.compare(senha, usuario.SENHA)
 
     if (!senhaValida) {
-      return c.json({ erro: 'E-mail ou senha inválidos' }, 401)
+      return c.json({ success: false, error: 'E-mail ou senha inválidos' }, 401)
     }
 
-    return c.json({ id: usuario.ID_CLIENTE })
-  } catch (error: any) {
-    return c.json({ erro: 'Erro interno no login', motivo: error.message }, 500)
+    return c.json({ success: true, data: { id: usuario.ID_CLIENTE } })
+  } catch {
+    return c.json({ success: false, error: 'Erro interno do servidor' }, 500)
   }
 })
 
