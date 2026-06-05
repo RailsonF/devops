@@ -4,6 +4,7 @@ import { cors } from 'hono/cors'
 // Importa os módulos de rotas
 import clientesApp from './routes/clientes'
 import favoritosApp from './routes/favoritos'
+import loginApp from './routes/login'
 
 const app = new Hono()
 
@@ -17,5 +18,7 @@ app.get('/', (c) => c.json({ mensagem: 'API rodando!' }))
 app.route('/clientes', clientesApp)
 
 app.route('/favoritos', favoritosApp)
+
+app.route('/login', loginApp)
 
 export default app

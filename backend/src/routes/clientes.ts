@@ -1,5 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Hono } from 'hono'
+import bcrypt from 'bcryptjs'
 
 // Tipagem do banco para o TypeScript não reclamar
 type Bindings = {
@@ -11,23 +12,27 @@ const clientesApp = new Hono<{ Bindings: Bindings }>()
 
 // 1. Cadastrar Cliente (POST /)
 clientesApp.post('/', async (c) => {
-  const { nome, email } = await c.req.json()
+  const { nome, email, senha } = await c.req.json()
 
-  if (!nome || !email) {
-    return c.json({ erro: 'Nome e e-mail são obrigatórios' }, 400)
+  if (!nome || !email || !senha) {
+    return c.json({ erro: 'Nome, e-mail e senha são obrigatórios' }, 400)
   }
 
   try {
+    const hash = await bcrypt.hash(senha, 10)
     const { success } = await c.env.DB.prepare(
-      `INSERT INTO clientes (nome, email) VALUES (?, ?)`
-    ).bind(nome, email).run()
+      `INSERT INTO clientes (nome, email, senha) VALUES (?, ?, ?)`
+    ).bind(nome, email, hash).run()
 
     if (success) {
       return c.json({ mensagem: 'Cliente cadastrado com sucesso!' }, 201)
     }
     return c.json({ erro: 'Erro ao cadastrar cliente' }, 500)
-  } catch (error) {
-    return c.json({ erro: 'E-mail já cadastrado' }, 400)
+  } catch (error: any) {
+    if (error.message?.includes('UNIQUE') || error.message?.includes('constraint')) {
+      return c.json({ erro: 'E-mail já cadastrado' }, 400)
+    }
+    return c.json({ erro: 'Erro interno', motivo: error.message }, 500)
   }
 })
 
@@ -50,7 +55,7 @@ clientesApp.put('/:id', async (c) => {
   }
 
   // 2. Tratativa dos dados de entrada
-  const { nome, email } = await c.req.json()
+  const { nome, email, senha } = await c.req.json()
 
   if (!nome || !email) {
     return c.json({ erro: 'Nome e e-mail são obrigatórios' }, 400 as const)
@@ -58,9 +63,19 @@ clientesApp.put('/:id', async (c) => {
 
   // 3. Tratativa do Banco de Dados com Try/Catch
   try {
-    const { success } = await c.env.DB.prepare(
-      `UPDATE clientes SET nome = ?, email = ? WHERE ID_CLIENTE = ?`
-    ).bind(nome, email, id).run()
+    let query = `UPDATE clientes SET nome = ?, email = ?`
+    const params: any[] = [nome, email]
+
+    if (senha) {
+      const hash = await bcrypt.hash(senha, 10)
+      query += `, senha = ?`
+      params.push(hash)
+    }
+
+    query += ` WHERE ID_CLIENTE = ?`
+    params.push(id)
+
+    const { success } = await c.env.DB.prepare(query).bind(...params).run()
 
     if (success) {
       return c.json({ mensagem: 'Cliente atualizado com sucesso!' }) // Status 200 é o padrão
