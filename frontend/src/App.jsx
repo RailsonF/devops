@@ -87,7 +87,7 @@ export default function App() {
             onClick={() => setAbaAtiva('produtos')}
             className="text-xl font-bold flex items-center gap-2 tracking-wide cursor-pointer"
           >
-            🛍️ Loja DevOps
+            Loja DevOps
           </h1>
 
           <div className="flex items-center gap-6">
@@ -179,62 +179,71 @@ export default function App() {
 
       {/* Sidebar do Carrinho */}
       {carrinhoAberto && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex justify-end">
-          <div className="bg-white w-full max-w-md h-full p-6 shadow-xl flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center border-b pb-4 mb-4">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <ShoppingCart className="text-blue-600" /> Sacola
-                </h2>
-                <button
-                  onClick={() => setCarrinhoAberto(false)}
-                  className="text-gray-400 hover:text-gray-700 font-bold p-1 cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+  <div className="fixed inset-0 bg-black/40 z-50 flex justify-end">
+    <div className="bg-white w-full max-w-md h-full p-6 shadow-xl flex flex-col justify-between">
+      <div>
+        <div className="flex justify-between items-center border-b pb-4 mb-4">
+          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <ShoppingCart className="text-blue-600" /> Sacola
+          </h2>
+          <button
+            onClick={() => setCarrinhoAberto(false)}
+            className="text-gray-400 hover:text-gray-700 font-bold p-1 cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-              <div className="overflow-y-auto max-h-[65vh] space-y-4 pr-1">
-                {carrinho.length === 0 ? (
-                  <p className="text-gray-400 text-center py-10">Carrinho vazio.</p>
-                ) : (
-                  carrinho.map(item => (
-                    <div key={item.id} className="flex gap-3 items-center border-b pb-3 border-gray-100">
-                      <img src={item.image} alt={item.title} className="w-10 h-10 object-contain" />
-                      <div className="flex-grow">
-                        <h4 className="text-xs font-bold text-gray-800 line-clamp-1">{item.title}</h4>
-                        <p className="text-xs text-gray-400">Qtd: {item.quantidade}</p>
-                      </div>
-                      <span className="font-bold text-xs text-gray-900">
-                        R$ {(item.price * item.quantidade).toFixed(2)}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {carrinho.length > 0 && (
-              <div className="border-t pt-4">
-                <div className="flex justify-between font-bold text-base text-gray-800 mb-4">
-                  <span>Subtotal:</span>
-                  <span>R$ {subtotalCarrinho.toFixed(2)}</span>
+        <div className="overflow-y-auto max-h-[65vh] space-y-4 pr-1">
+          {carrinho.length === 0 ? (
+            <p className="text-gray-400 text-center py-10">Carrinho vazio.</p>
+          ) : (
+            carrinho.map(item => (
+              <div key={item.id || item.ID} className="flex gap-3 items-center border-b pb-3 border-gray-100">
+                <img src={item.image || item.IMAGEM} alt={item.title || item.TITULO} className="w-10 h-10 object-contain" />
+                <div className="flex-grow">
+                  <h4 className="text-xs font-bold text-gray-800 line-clamp-1">{item.title || item.TITULO}</h4>
+                  <p className="text-xs text-gray-400">Qtd: {item.quantidade}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    alert("Pedido finalizado!");
-                    setCarrinho([]);
-                    setCarrinhoAberto(false);
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-colors cursor-pointer text-sm"
+                <span className="font-bold text-xs text-gray-900">
+                  R$ {((item.price || item.PRECO) * item.quantidade).toFixed(2)}
+                </span>
+                
+                {/* BOTÃO DE REMOVER QUE VOCÊ PEDIU */}
+                <button 
+                  onClick={() => setCarrinho(carrinho.filter(i => (i.id || i.ID) !== (item.id || item.ID)))}
+                  className="text-red-400 hover:text-red-600 p-1 cursor-pointer transition-colors"
+                  title="Remover item"
                 >
-                  Finalizar Compra
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            )}
+            ))
+          )}
+        </div>
+      </div>
+
+      {carrinho.length > 0 && (
+        <div className="border-t pt-4">
+          <div className="flex justify-between font-bold text-base text-gray-800 mb-4">
+            <span>Subtotal:</span>
+            <span>R$ {carrinho.reduce((acc, item) => acc + ((item.price || item.PRECO) * item.quantidade), 0).toFixed(2)}</span>
           </div>
+          <button
+            onClick={() => {
+              alert("Pedido finalizado!");
+              setCarrinho([]);
+              setCarrinhoAberto(false);
+            }}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-colors cursor-pointer text-sm"
+          >
+            Finalizar Compra
+          </button>
         </div>
       )}
+    </div>
+  </div>
+)}
 
       <footer className="bg-gray-800 text-white text-center py-3 text-xs mt-auto">
         <p>Desenvolvido pela Equipe Railson e Michely — 2026</p>
