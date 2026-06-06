@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8787:8787"
+    volumes:
+      # Espelha o código local para dentro do contêiner (Hot Reload)
+      - ./backend:/app
+      # Protege a pasta node_modules do contêiner para não conflitar com a local
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      # Garante que o frontend dentro do Docker saiba onde achar a API
+      - VITE_API_URL=http://localhost:8787
+    depends_on:
+      - backend
